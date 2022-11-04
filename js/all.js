@@ -10,6 +10,8 @@ function upload(data) {
         var lines = csv.split("\n");
         var object = "";
         var accuracies = [];
+        var objects = {};
+        var details = [];
         
         for (var i = 0; i < lines.length; i++) {
             // detect a line with the name of an object
@@ -29,11 +31,20 @@ function upload(data) {
                     accuracy = parseFloat(arr[1]);
                     //jsonVersion.push({ object: object, accuracy: accuracy, record_id: jQuery('#InputParticipantID').val(), redcap_event: jQuery('#Event').val()  });
                     accuracies.push(accuracy);
+                    if (typeof objects[object] == 'undefined') {
+                        objects[object] = 1;
+                    } else {
+                        objects[object] = objects[object] + 1;
+                    }
+
                     jQuery('#tbody').append('<tr><td>' + object + "</td><td>" + accuracy + "</td></tr>");
+                    details.push({object: object, accuracy: accuracy});
                     object = "";
                 }
             }
         }
+
+        jQuery('#stats').html("Results " + accuracies.length + " entries. Details: " + JSON.stringify(objects) + ".");
 
         const avgAccuracy = parseFloat(accuracies.reduce( (partial, a) => partial + a, 0 ) / accuracies.length).toFixed(4);
         
@@ -45,7 +56,8 @@ function upload(data) {
         if (1) { // download
             var downloadLink = document.createElement("a");
             downloadLink.download = filename.replace(".log", ".json");
-            var myBlob = new Blob([JSON.stringify(jsonVersion, null, 2)], { type: "application/json" });
+            var data = {summary: jsonVersion, details: details, filename: filename, date: new Date()};
+            var myBlob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
             downloadLink.href = window.URL.createObjectURL(myBlob);
             downloadLink.onclick = function (e) {
                 document.body.removeChild(e.target);
