@@ -9,7 +9,8 @@ function upload(data) {
 
         var lines = csv.split("\n");
         var object = "";
-        var accuracy = "";
+        var accuracies = [];
+        
         for (var i = 0; i < lines.length; i++) {
             // detect a line with the name of an object
             // ScriptLog: 1944 96.46 Show Neuro2.Obj.t_bucket X -2161.00 Y -261.00
@@ -17,7 +18,7 @@ function upload(data) {
                 var rx = /ScriptLog: ([0-9.]+) ([0-9.]+) ([^ ]+) ([^ ]+)/g;
                 var arr = rx.exec(lines[i]);
                 if (arr.length == 5)
-                    object = arr[4];
+                    object = arr[4].split('.').pop().replace('t_', '');
             }
             // detect the gap
             // ScriptLog: how accurately placed = 2691.07
@@ -25,19 +26,22 @@ function upload(data) {
                 var rx = /ScriptLog: how accurately placed = ([0-9.-]+)/g;
                 var arr = rx.exec(lines[i]);
                 if (arr != null && arr.length == 2) {
-                    accuracy = arr[1];
-                    jsonVersion.push({ object: object, accuracy: accuracy, record_id: jQuery('#InputParticipantID').val(), redcap_event: jQuery('#Event').val()  });
+                    accuracy = parseFloat(arr[1]);
+                    //jsonVersion.push({ object: object, accuracy: accuracy, record_id: jQuery('#InputParticipantID').val(), redcap_event: jQuery('#Event').val()  });
+                    accuracies.push(accuracy);
                     jQuery('#tbody').append('<tr><td>' + object + "</td><td>" + accuracy + "</td></tr>");
-
                     object = "";
                 }
             }
-
         }
 
+        const avgAccuracy = parseFloat(accuracies.reduce( (partial, a) => partial + a, 0 ) / accuracies.length).toFixed(4);
+        
+        jsonVersion.push({ accuracy: avgAccuracy, record_id: jQuery('#InputParticipantID').val(), redcap_event: jQuery('#Event').val()  });
 
         // once the table is filled we can compute a download version of the data
-        jQuery('#jsonV').text(JSON.stringify(jsonVersion, null, 2));
+        jQuery('#jsonV').val(JSON.stringify(jsonVersion, null, 2));
+
         if (1) { // download
             var downloadLink = document.createElement("a");
             downloadLink.download = filename.replace(".log", ".json");
@@ -50,10 +54,10 @@ function upload(data) {
             document.body.appendChild(downloadLink);
             downloadLink.click();
         }
-
-
     };
+
     fr.readAsText(data[0]);
+
     return false;
 }
 
