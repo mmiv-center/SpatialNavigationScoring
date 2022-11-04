@@ -22,11 +22,11 @@ function upload(data) {
             // detect the gap
             // ScriptLog: how accurately placed = 2691.07
             if (lines[i].indexOf("ScriptLog: ") != -1) {
-                var rx = /ScriptLog: how accurately placed = ([0-9.]+)/g;
+                var rx = /ScriptLog: how accurately placed = ([0-9.-]+)/g;
                 var arr = rx.exec(lines[i]);
                 if (arr != null && arr.length == 2) {
                     accuracy = arr[1];
-                    jsonVersion.push({ object: object, accuracy: accuracy });
+                    jsonVersion.push({ object: object, accuracy: accuracy, record_id: jQuery('#InputParticipantID').val(), redcap_event: jQuery('#Event').val()  });
                     jQuery('#tbody').append('<tr><td>' + object + "</td><td>" + accuracy + "</td></tr>");
 
                     object = "";
@@ -40,7 +40,7 @@ function upload(data) {
         jQuery('#jsonV').text(JSON.stringify(jsonVersion, null, 2));
         if (1) { // download
             var downloadLink = document.createElement("a");
-            downloadLink.download = filename.replace(".csv", ".json");
+            downloadLink.download = filename.replace(".log", ".json");
             var myBlob = new Blob([JSON.stringify(jsonVersion, null, 2)], { type: "application/json" });
             downloadLink.href = window.URL.createObjectURL(myBlob);
             downloadLink.onclick = function (e) {
@@ -85,6 +85,8 @@ jQuery(document).ready(function () {
         if (e.originalEvent.dataTransfer && e.originalEvent.dataTransfer.files.length) {
             /*UPLOAD FILES HERE*/
             //console.log("got a file");
+            jQuery('#jsonV').val("");
+            jQuery("#tbody").children().remove();
             upload(e.originalEvent.dataTransfer.files);
         }
         return false;
