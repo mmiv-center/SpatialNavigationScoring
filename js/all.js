@@ -5,6 +5,7 @@ function upload(data) {
     var fr = new FileReader();
     fr.onload = function () {
         var csv = fr.result;
+        var jsonVersion = [];
 
         var lines = csv.split("\n");
         var object = "";
@@ -15,15 +16,25 @@ function upload(data) {
             if (lines[i].indexOf(" Show ") != -1) {
                 var rx = /ScriptLog: ([0-9.]+) ([0-9.]+) ([^ ]+) ([^ ]+)/g;
                 var arr = rx.exec(lines[i]);
-                object = arr[1];
+                if (arr.length == 5)
+                    object = arr[4];
             }
             // detect the gap
             // ScriptLog: how accurately placed = 2691.07
+            if (lines[i].indexOf("ScriptLog: ") != -1) {
+                var rx = /ScriptLog: how accurately placed = ([0-9.]+)/g;
+                var arr = rx.exec(lines[i]);
+                if (arr != null && arr.length == 2) {
+                    accuracy = arr[1];
+                    jsonVersion.push({ object: object, accuracy: accuracy });
+                    jQuery('#tbody').append('<tr><td>' + object + "</td><td>" + accuracy + "</td></tr>");
 
-            // if gap
-            //     add those to the spreadsheet
+                    object = "";
+                }
+            }
 
         }
+
 
         // once the table is filled we can compute a download version of the data
         jQuery('#jsonV').text(JSON.stringify(jsonVersion, null, 2));
